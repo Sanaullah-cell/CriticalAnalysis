@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comprehension Quiz</title>
+    <title>Reading Comprehension Quiz</title>
     <style>
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -13,272 +13,396 @@
             padding: 0;
             min-height: 100vh;
         }
+        .header {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
         .container {
-            max-width: 700px;
+            max-width: 800px;
             margin: 2rem auto;
             background-color: white;
             padding: 2.5rem;
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
-        .question {
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
             margin-bottom: 2rem;
-            padding: 1.5rem;
-            border-left: 5px solid #3498db;
-            background-color: #f8f9fa;
-            border-radius: 8px;
         }
-        button {
-            background: #3498db;
-            color: white;
-            padding: 15px 30px;
-            border: none;
+        .stat-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+            border-left: 4px solid #3498db;
+        }
+        .quiz-question {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 5px solid #3498db;
+        }
+        .options label {
+            display: block;
+            margin: 0.8rem 0;
+            padding: 0.8rem;
+            background: white;
+            border: 2px solid #e9ecef;
             border-radius: 8px;
             cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .options label:hover {
+            border-color: #3498db;
+            background: #e3f2fd;
+        }
+        .options input[type="radio"] {
+            margin-right: 10px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 8px;
             font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
             margin: 0.5rem;
         }
-        .btn-success { background: #27ae60; }
-        .status-message { padding: 15px; border-radius: 8px; margin: 15px 0; text-align: center; font-weight: bold; }
-        .status-success { background: #d5f4e6; color: #27ae60; border: 2px solid #27ae60; }
-        .status-warning { background: #fef5e7; color: #f39c12; border: 2px solid #f39c12; }
-        .status-error { background: #fadbd8; color: #e74c3c; border: 2px solid #e74c3c; }
-        .option-label { display: block; padding: 12px; margin: 8px 0; background: white; border: 2px solid #e1e8ed; border-radius: 8px; cursor: pointer; }
-        .option-label.selected { background: #3498db; color: white; }
-        input[type="radio"] { margin-right: 10px; }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .btn-submit {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+        }
+        .btn-email {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+        }
+        .results-container {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border-radius: 10px;
+            margin: 2rem 0;
+        }
+        .score-display {
+            font-size: 48px;
+            font-weight: bold;
+            margin: 1rem 0;
+        }
+        .email-status {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.2);
+        }
     </style>
+    
+    <!-- EmailJS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+    <script>
+        // Initialize EmailJS with your actual credentials
+        emailjs.init("ugdPMz7LKkW5zRjnl");
+    </script>
 </head>
 <body>
+    <div class="header">
+        <div id="participantInfo">Participant: Loading...</div>
+        <div id="quizInfo">Comprehension Quiz</div>
+    </div>
+
     <div class="container">
-        <h1>Comprehension Quiz</h1>
-        <p>Please answer all questions based on the text you read.</p>
+        <h1>📝 Reading Comprehension Quiz</h1>
         
-        <div id="validationWarning" class="status-message status-error" style="display: none;">
-            Please answer all questions before submitting!
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="stat-value" id="readingTime">--:--</div>
+                <div class="stat-label">Reading Time</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="wordsPerMinute">---</div>
+                <div class="stat-label">Words Per Minute</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="contrastType">---</div>
+                <div class="stat-label">Contrast Condition</div>
+            </div>
         </div>
 
-        <div id="statusMessage" class="status-message" style="display: none;"></div>
-        
-        <!-- Hidden iframe for form submission -->
-        <iframe name="hiddenFrame" style="display: none;"></iframe>
-        
-        <form id="quiz-form">
-            <div class="question">
-                <p><strong>1. What is the primary focus of the text?</strong></p>
-                <label class="option-label"><input type="radio" name="q1" value="A"> A) General insect biology</label>
-                <label class="option-label"><input type="radio" name="q1" value="B"> B) Monarch butterfly life cycle</label>
-                <label class="option-label"><input type="radio" name="q1" value="C"> C) Butterfly anatomy</label>
-                <label class="option-label"><input type="radio" name="q1" value="D"> D) Gardening techniques</label>
+        <!-- QUIZ FORM -->
+        <form id="quizForm">
+            <!-- Question 1 -->
+            <div class="quiz-question">
+                <h3>1. What is the main focus of monarch butterfly conservation efforts?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q1" value="A" required> Protecting milkweed habitats</label>
+                    <label><input type="radio" name="q1" value="B"> Building butterfly houses</label>
+                    <label><input type="radio" name="q1" value="C"> Increasing pesticide use</label>
+                    <label><input type="radio" name="q1" value="D"> Capturing butterflies for research</label>
+                </div>
             </div>
-            
-            <div class="question">
-                <p><strong>2. What remarkable feat are monarch butterflies known for?</strong></p>
-                <label class="option-label"><input type="radio" name="q2" value="A"> A) Color changing</label>
-                <label class="option-label"><input type="radio" name="q2" value="B"> B) Long-distance migration</label>
-                <label class="option-label"><input type="radio" name="q2" value="C"> C) Long lifespan</label>
-                <label class="option-label"><input type="radio" name="q2" value="D"> D) Nest building</label>
+
+            <!-- Question 2 -->
+            <div class="quiz-question">
+                <h3>2. How far can monarch butterflies travel during migration?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q2" value="A" required> Up to 1,000 miles</label>
+                    <label><input type="radio" name="q2" value="B"> Up to 3,000 miles</label>
+                    <label><input type="radio" name="q2" value="C"> Up to 5,000 miles</label>
+                    <label><input type="radio" name="q2" value="D"> They don't migrate</label>
+                </div>
             </div>
-            
-            <div class="question">
-                <p><strong>3. What plant is essential for monarch reproduction?</strong></p>
-                <label class="option-label"><input type="radio" name="q3" value="A"> A) Sunflower</label>
-                <label class="option-label"><input type="radio" name="q3" value="B"> B) Oak tree</label>
-                <label class="option-label"><input type="radio" name="q3" value="C"> C) Milkweed</label>
-                <label class="option-label"><input type="radio" name="q3" value="D"> D) Rose bush</label>
+
+            <!-- Question 3 -->
+            <div class="quiz-question">
+                <h3>3. What is the exclusive food source for monarch caterpillars?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q3" value="A" required> Various flowers</label>
+                    <label><input type="radio" name="q3" value="B"> Milkweed plants</label>
+                    <label><input type="radio" name="q3" value="C"> Tree leaves</label>
+                    <label><input type="radio" name="q3" value="D"> Grass</label>
+                </div>
             </div>
-            
-            <div class="question">
-                <p><strong>4. How many stages in monarch metamorphosis?</strong></p>
-                <label class="option-label"><input type="radio" name="q4" value="A"> A) Three</label>
-                <label class="option-label"><input type="radio" name="q4" value="B"> B) Four</label>
-                <label class="option-label"><input type="radio" name="q4" value="C"> C) Five</label>
-                <label class="option-label"><input type="radio" name="q4" value="D"> D) Six</label>
+
+            <!-- Question 4 -->
+            <div class="quiz-question">
+                <h3>4. How many life stages do monarch butterflies have?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q4" value="A" required> Three</label>
+                    <label><input type="radio" name="q4" value="B"> Four</label>
+                    <label><input type="radio" name="q4" value="C"> Five</label>
+                    <label><input type="radio" name="q4" value="D"> Six</label>
+                </div>
             </div>
-            
-            <div class="question">
-                <p><strong>5. Main threats to monarch butterflies?</strong></p>
-                <label class="option-label"><input type="radio" name="q5" value="A"> A) Predators only</label>
-                <label class="option-label"><input type="radio" name="q5" value="B"> B) Habitat loss & climate change</label>
-                <label class="option-label"><input type="radio" name="q5" value="C"> C) Overhunting</label>
-                <label class="option-label"><input type="radio" name="q5" value="D"> D) Pollution only</label>
+
+            <!-- Question 5 -->
+            <div class="quiz-question">
+                <h3>5. What role do citizen scientists play in monarch conservation?</h3>
+                <div class="options">
+                    <label><input type="radio" name="q5" value="A" required> Tracking migration patterns</label>
+                    <label><input type="radio" name="q5" value="B"> Breeding butterflies</label>
+                    <label><input type="radio" name="q5" value="C"> Selling milkweed plants</label>
+                    <label><input type="radio" name="q5" value="D"> Writing legislation</label>
+                </div>
             </div>
-            
-            <div style="text-align: center; margin-top: 2rem;">
-                <button type="button" onclick="submitQuiz()" class="btn-success">Submit Quiz</button>
-                <button type="button" onclick="autoFillTest()">Auto-fill Test Answers</button>
-            </div>
+
+            <center>
+                <button type="button" class="btn btn-submit" onclick="submitQuiz()">📤 Submit Quiz</button>
+            </center>
         </form>
-        
-        <div id="results" style="display: none; background: #e8f4f8; padding: 20px; border-radius: 10px; margin-top: 20px;">
-            <h3>Your Results</h3>
-            <p><strong>Score:</strong> <span id="score-value">0</span>/5</p>
-            <p><strong>Reading Time:</strong> <span id="time-value">0</span> seconds</p>
-            <p><strong>Accuracy:</strong> <span id="accuracy-value">0</span>%</p>
-            <p><strong>Contrast Condition:</strong> <span id="contrast-type-result">Unknown</span></p>
-            <p id="save-status">Processing...</p>
+
+        <!-- RESULTS SECTION -->
+        <div class="results-container" id="resultsContainer">
+            <h2>🎉 Quiz Completed!</h2>
+            <div class="score-display" id="scoreDisplay">5/5</div>
+            <p>Your score: <span id="correctAnswers">5</span> out of 5 correct (<span id="percentage">100%</span>)</p>
+            
+            <div class="email-status" id="emailStatus">
+                <p>📧 Sending data to researcher... Please wait.</p>
+            </div>
+            
+            <div style="margin: 2rem 0;">
+                <button class="btn" onclick="downloadCSV()">📥 Download CSV Backup</button>
+                <button class="btn" onclick="restartExperiment()">🔄 New Participant</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // Get URL parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const readingTime = urlParams.get('time');
-        const contrastType = urlParams.get('contrast');
-        const wordsPerMinute = urlParams.get('wpm');
-        
-        // Your Google Apps Script URL
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzV594676lrjZCK9ozse88MTblqutosF5CNzuuq_HtNZGncraoZhLEJVwgT3FeIi_LX/exec';
-        
-        const correctAnswers = { q1: 'B', q2: 'B', q3: 'C', q4: 'B', q5: 'B' };
+        // Correct answers
+        const correctAnswers = {
+            q1: 'A', // Protecting milkweed habitats
+            q2: 'B', // Up to 3,000 miles
+            q3: 'B', // Milkweed plants
+            q4: 'B', // Four
+            q5: 'A'  // Tracking migration patterns
+        };
 
-        // Initialize radio buttons
+        // Get experiment data
+        const participantId = sessionStorage.getItem('participantId') || 'Unknown';
+        const contrastType = sessionStorage.getItem('contrastType') || 'unknown';
+        const readingTime = sessionStorage.getItem('readingTime') || '0';
+        const wpm = sessionStorage.getItem('wordsPerMinute') || '0';
+
+        // Initialize page
         document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.option-label').forEach(label => {
-                label.addEventListener('click', function() {
-                    const question = this.closest('.question');
-                    question.querySelectorAll('.option-label').forEach(l => l.classList.remove('selected'));
-                    this.classList.add('selected');
-                    this.querySelector('input[type="radio"]').checked = true;
-                });
-            });
+            document.getElementById('participantInfo').textContent = `Participant: ${participantId}`;
+            document.getElementById('readingTime').textContent = `${readingTime}s`;
+            document.getElementById('wordsPerMinute').textContent = `${wpm} WPM`;
+            document.getElementById('contrastType').textContent = contrastType === 'high' ? 'High' : 'Low';
         });
 
-        function autoFillTest() {
-            // Auto-fill correct answers for testing
-            Object.keys(correctAnswers).forEach(question => {
-                const radio = document.querySelector(`input[name="${question}"][value="${correctAnswers[question]}"]`);
-                if (radio) {
-                    radio.checked = true;
-                    radio.closest('.option-label').classList.add('selected');
-                }
-            });
-            showStatus('Test answers auto-filled. Click "Submit Quiz" to test.', 'success');
-        }
-
         function submitQuiz() {
-            if (!checkAllQuestionsAnswered()) {
-                document.getElementById('validationWarning').style.display = 'block';
-                return;
-            }
-            
-            document.getElementById('validationWarning').style.display = 'none';
-            showStatus('Processing your results...', 'success');
-            
-            // Calculate score
             let score = 0;
             const userAnswers = {};
             
+            // Check each question
             for (let i = 1; i <= 5; i++) {
-                const qName = 'q' + i;
-                const selected = document.querySelector(`input[name="${qName}"]:checked`);
-                userAnswers[qName] = selected ? selected.value : '';
+                const questionName = `q${i}`;
+                const selectedOption = document.querySelector(`input[name="${questionName}"]:checked`);
                 
-                if (userAnswers[qName] === correctAnswers[qName]) {
+                if (!selectedOption) {
+                    alert(`Please answer question ${i}`);
+                    return;
+                }
+                
+                userAnswers[questionName] = selectedOption.value;
+                if (selectedOption.value === correctAnswers[questionName]) {
                     score++;
                 }
             }
             
-            const accuracy = Math.round((score / 5) * 100);
-            const participantId = sessionStorage.getItem('participantId') || 'Unknown';
+            // Calculate percentage
+            const percentage = (score / 5) * 100;
             
             // Show results
-            document.getElementById('score-value').textContent = score;
-            document.getElementById('time-value').textContent = readingTime;
-            document.getElementById('accuracy-value').textContent = accuracy;
-            document.getElementById('contrast-type-result').textContent = contrastType;
-            document.getElementById('results').style.display = 'block';
+            document.getElementById('correctAnswers').textContent = score;
+            document.getElementById('percentage').textContent = `${percentage}%`;
+            document.getElementById('scoreDisplay').textContent = `${score}/5`;
             
-            // Send to Google Sheets using FORM submission (bypasses CORS)
-            sendToGoogleSheets(participantId, score, accuracy, userAnswers);
+            // Hide quiz, show results
+            document.getElementById('quizForm').style.display = 'none';
+            document.getElementById('resultsContainer').style.display = 'block';
+            
+            // 🔥 AUTOMATICALLY SEND EMAIL WITH DATA
+            sendAutoEmail(score, userAnswers, percentage);
+            
+            // Also save locally as backup
+            saveResults(score, userAnswers, percentage);
         }
 
-        function sendToGoogleSheets(participantId, score, accuracy, userAnswers) {
-            const data = {
+        function sendAutoEmail(score, userAnswers, percentage) {
+            const emailStatus = document.getElementById('emailStatus');
+            
+            // Get all historical results for CSV
+            const allResults = JSON.parse(localStorage.getItem('experimentResults') || '[]');
+            const currentResult = {
                 participantId: participantId,
                 contrastType: contrastType,
                 readingTime: readingTime,
-                wordsPerMinute: wordsPerMinute,
+                wordsPerMinute: wpm,
                 score: score,
-                accuracy: accuracy,
-                q1: userAnswers.q1,
-                q2: userAnswers.q2,
-                q3: userAnswers.q3,
-                q4: userAnswers.q4,
-                q5: userAnswers.q5,
+                percentage: percentage,
+                answers: userAnswers,
                 completionTime: new Date().toISOString()
             };
             
-            console.log('Sending data to Google Sheets:', data);
+            // Add current result to history for CSV
+            allResults.push(currentResult);
             
-            // Create a hidden form to submit data (this bypasses CORS)
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = GOOGLE_SCRIPT_URL;
-            form.target = 'hiddenFrame';
-            form.style.display = 'none';
+            // Create CSV data - FIXED: Proper WPM calculation
+            let csvData = 'ParticipantID,ContrastCondition,ReadingTime,WPM,Score,Percentage,Q1_Answer,Q2_Answer,Q3_Answer,Q4_Answer,Q5_Answer,CompletionTime\n';
             
-            // Add all data as hidden inputs
-            Object.keys(data).forEach(key => {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = key;
-                input.value = data[key];
-                form.appendChild(input);
+            allResults.forEach(result => {
+                // Calculate WPM properly for each result
+                const calculatedWPM = result.wordsPerMinute && result.wordsPerMinute !== 'undefined' ? result.wordsPerMinute : '0';
+                csvData += `"${result.participantId}","${result.contrastType}","${result.readingTime}","${calculatedWPM}","${result.score}","${result.percentage}","${result.answers.q1}","${result.answers.q2}","${result.answers.q3}","${result.answers.q4}","${result.answers.q5}","${result.completionTime}"\n`;
             });
-            
-            document.body.appendChild(form);
-            
-            // Handle the response
-            const iframe = document.getElementsByName('hiddenFrame')[0];
-            let submissionCompleted = false;
-            
-            iframe.onload = function() {
-                if (!submissionCompleted) {
-                    submissionCompleted = true;
-                    showStatus('✅ Results successfully saved to research database!', 'success');
-                    document.getElementById('save-status').textContent = 'Data automatically saved to Google Sheets!';
-                    console.log('✅ Google Sheets submission successful');
-                    
-                    // Also save to localStorage as backup
-                    saveToLocalStorage(data);
-                }
+
+            // Prepare email data - FIXED: Send actual CSV data
+            const templateParams = {
+                to_email: 'sullah14@uclan.ac.uk',
+                participant_id: participantId,
+                contrast_type: contrastType,
+                reading_time: readingTime,
+                words_per_minute: wpm,
+                quiz_score: score,
+                percentage: percentage,
+                total_participants: allResults.length,
+                completion_time: new Date().toLocaleString(),
+                csv_data: csvData // This sends the actual CSV data
+            };
+
+            // Send email via EmailJS
+            emailjs.send('service_th2y1s9', 'template_ody6ceo', templateParams)
+                .then(function(response) {
+                    console.log('SUCCESS!', response.status, response.text);
+                    emailStatus.innerHTML = `
+                        <div style="color: #ffffff;">
+                            <h3>✅ Data Successfully Sent!</h3>
+                            <p>Complete experiment data with CSV has been emailed to sullah14@uclan.ac.uk</p>
+                            <p><strong>📊 ${allResults.length} participant records included</strong></p>
+                            <p>You can also download a backup CSV file using the button below.</p>
+                        </div>
+                    `;
+                }, function(error) {
+                    console.log('FAILED...', error);
+                    emailStatus.innerHTML = `
+                        <div style="color: #ff9800;">
+                            <h3>⚠️ Email Failed - Download Data Instead</h3>
+                            <p>Error: ${error.text || 'Network issue'}</p>
+                            <p>Please use the Download CSV button below to save your data.</p>
+                        </div>
+                    `;
+                });
+        }
+
+        function saveResults(score, userAnswers, percentage) {
+            const result = {
+                participantId: participantId,
+                contrastType: contrastType,
+                readingTime: readingTime,
+                wordsPerMinute: wpm,
+                score: score,
+                percentage: percentage,
+                answers: userAnswers,
+                completionTime: new Date().toISOString(),
+                timestamp: new Date().getTime()
             };
             
-            // Fallback in case iframe doesn't load
-            setTimeout(() => {
-                if (!submissionCompleted) {
-                    submissionCompleted = true;
-                    showStatus('✅ Results processed! (Assuming successful)', 'success');
-                    document.getElementById('save-status').textContent = 'Data processed - check your Google Sheets!';
-                    console.log('✅ Assuming Google Sheets submission successful');
-                    saveToLocalStorage(data);
-                }
-            }, 3000);
+            // Save to localStorage
+            const allResults = JSON.parse(localStorage.getItem('experimentResults') || '[]');
+            allResults.push(result);
+            localStorage.setItem('experimentResults', JSON.stringify(allResults));
             
-            // Submit the form
-            form.submit();
-            document.body.removeChild(form);
+            // Update completion count
+            const count = parseInt(localStorage.getItem('experimentCompletions') || '0');
+            localStorage.setItem('experimentCompletions', (count + 1).toString());
         }
 
-        function saveToLocalStorage(data) {
-            const allData = JSON.parse(localStorage.getItem('contrastExperimentData') || '[]');
-            allData.push(data);
-            localStorage.setItem('contrastExperimentData', JSON.stringify(allData));
-            console.log('💾 Backup saved to localStorage');
+        function downloadCSV() {
+            const results = JSON.parse(localStorage.getItem('experimentResults') || '[]');
+            
+            let csv = 'ParticipantID,ContrastCondition,ReadingTime,WPM,Score,Percentage,Q1_Answer,Q2_Answer,Q3_Answer,Q4_Answer,Q5_Answer,CompletionTime\n';
+            
+            results.forEach(result => {
+                const calculatedWPM = result.wordsPerMinute && result.wordsPerMinute !== 'undefined' ? result.wordsPerMinute : '0';
+                csv += `"${result.participantId}","${result.contrastType}","${result.readingTime}","${calculatedWPM}","${result.score}","${result.percentage}","${result.answers.q1}","${result.answers.q2}","${result.answers.q3}","${result.answers.q4}","${result.answers.q5}","${result.completionTime}"\n`;
+            });
+            
+            // Create download
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `reading_experiment_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
         }
 
-        function checkAllQuestionsAnswered() {
-            for (let i = 1; i <= 5; i++) {
-                if (!document.querySelector(`input[name="q${i}"]:checked`)) return false;
-            }
-            return true;
-        }
-
-        function showStatus(message, type) {
-            const statusDiv = document.getElementById('statusMessage');
-            statusDiv.textContent = message;
-            statusDiv.className = `status-message status-${type}`;
-            statusDiv.style.display = 'block';
+        function restartExperiment() {
+            // Clear session data
+            sessionStorage.removeItem('readingTime');
+            sessionStorage.removeItem('wordsPerMinute');
+            sessionStorage.removeItem('completionTime');
+            // Go back to start
+            window.location.href = 'index.html';
         }
     </script>
 </body>
