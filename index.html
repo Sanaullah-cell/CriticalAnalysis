@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contrast Reading Experiment</title>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: 2rem;
+            background-color: white;
+            padding: 3rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+        .participant-id {
+            margin: 1.5rem 0;
+        }
+        #participantId {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 200px;
+            text-align: center;
+        }
+        .button-group {
+            margin: 2rem 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 10px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        .btn-high {
+            background: linear-gradient(135deg, #1A237E, #283593);
+        }
+        .btn-low {
+            background: linear-gradient(135deg, #B3E5FC, #81D4FA);
+            color: #1565C0;
+        }
+        .btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .instructions {
+            text-align: left;
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 1.5rem 0;
+            border-left: 5px solid #3498db;
+        }
+        .condition-info {
+            display: none;
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #e8f4f8;
+            border-radius: 8px;
+            border: 1px solid #b3e5fc;
+        }
+        .stats {
+            margin-top: 2rem;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Reading Comprehension Experiment</h1>
+        <p class="subtitle">Studying the Impact of Color Contrast on Reading Performance</p>
+        
+        <div class="participant-id">
+            <label for="participantId"><strong>Participant ID:</strong></label><br>
+            <input type="text" id="participantId" placeholder="Enter your unique ID" maxlength="10">
+            <div id="idError" style="color: red; font-size: 14px; margin-top: 5px; display: none;">Please enter a Participant ID</div>
+        </div>
+        
+        <div class="instructions">
+            <h3>📋 Instructions:</h3>
+            <ol>
+                <li><strong>Enter your Participant ID</strong> above</li>
+                <li>Choose either <strong>High Contrast</strong> or <strong>Low Contrast</strong> version</li>
+                <li>Read the text carefully at your normal reading pace</li>
+                <li>Click <strong>"I'm Done Reading"</strong> when finished</li>
+                <li>Answer <strong>5 comprehension questions</strong></li>
+                <li>View your detailed results at the end</li>
+            </ol>
+            <p>⏱️ <strong>Note:</strong> Your reading time will be automatically recorded. Please complete this in a quiet environment.</p>
+        </div>
+        
+        <div class="button-group">
+            <h3>🎨 Select Your Test Version:</h3>
+            <button class="btn btn-high" onclick="startExperiment('high')">High Contrast Version</button>
+            <button class="btn btn-low" onclick="startExperiment('low')">Low Contrast Version</button>
+            
+            <div class="condition-info" id="highContrastInfo">
+                <strong>High Contrast:</strong> Optimal readability (WCAG AAA compliant)
+            </div>
+            <div class="condition-info" id="lowContrastInfo">
+                <strong>Low Contrast:</strong> Stylistic but challenging readability
+            </div>
+        </div>
+        
+        <div class="stats">
+            <p><strong>Research Data:</strong> All data is anonymized and used solely for academic research purposes.</p>
+            <p id="completionCount">Participants completed: Loading...</p>
+        </div>
+    </div>
+
+    <script>
+        // Load completion count from localStorage
+        function updateCompletionCount() {
+            const count = localStorage.getItem('experimentCompletions') || '0';
+            document.getElementById('completionCount').textContent = `Participants completed: ${count}`;
+        }
+        
+        // Show condition info on hover
+        document.querySelector('.btn-high').addEventListener('mouseenter', function() {
+            document.getElementById('highContrastInfo').style.display = 'block';
+        });
+        document.querySelector('.btn-high').addEventListener('mouseleave', function() {
+            document.getElementById('highContrastInfo').style.display = 'none';
+        });
+        
+        document.querySelector('.btn-low').addEventListener('mouseenter', function() {
+            document.getElementById('lowContrastInfo').style.display = 'block';
+        });
+        document.querySelector('.btn-low').addEventListener('mouseleave', function() {
+            document.getElementById('lowContrastInfo').style.display = 'none';
+        });
+        
+        // Start experiment with validation
+        function startExperiment(contrastType) {
+            const participantId = document.getElementById('participantId').value.trim();
+            const errorDiv = document.getElementById('idError');
+            
+            if (!participantId) {
+                errorDiv.style.display = 'block';
+                document.getElementById('participantId').focus();
+                return;
+            }
+            
+            errorDiv.style.display = 'none';
+            
+            // Store participant ID for the session
+            sessionStorage.setItem('participantId', participantId);
+            sessionStorage.setItem('contrastType', contrastType);
+            sessionStorage.setItem('startTime', new Date().toISOString());
+            
+            // Redirect to the appropriate page
+            window.location.href = `${contrastType}-contrast.html`;
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCompletionCount();
+            document.getElementById('participantId').focus();
+            
+            // Load any previously entered ID
+            const savedId = sessionStorage.getItem('participantId');
+            if (savedId) {
+                document.getElementById('participantId').value = savedId;
+            }
+        });
+    </script>
+</body>
+</html>
